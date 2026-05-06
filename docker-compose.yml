@@ -1,32 +1,69 @@
 version: "3.9"
 
+# ── Network ───────────────────────────────────────────────────────────────────
+networks:
+  lead_net:
+    driver: bridge
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  api_logs:
+
 services:
+
+  # ── Lead Scoring API ────────────────────────────────────────────────────────
   lead-scoring-api:
     build:
       context: .
-      target: runtime         # use the lean production stage
+      dockerfile: Dockerfile
+      target: runtime
     image: lead-scoring-api:latest
     container_name: lead_scoring_api
-    ports:
-      - "8000:8000"
-    environment:
-      - PORT=8000
-      - API_KEYS=dev-key-12345,staging-key-99999
     restart: unless-stopped
+    networks:
+      - lead_net
+    expose:
+      - "8000"
+    volumes:
+      - api_logs:/app/logs
+    environment:
+      PORT:     ${PORT:-8000}
+      API_KEYS: ${API_KEYS:-dev-key-12345}
+    env_file:
+      - .env
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          memory: 256M
 
-  # Optional: Uncomment to add a reverse proxy in front of the API
-  # nginx:
-  #   image: nginx:alpine
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf
-  #   depends_on:
-  #     - lead-scoring-api
+  # ── Nginx Reverse Proxy ────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: lead_nginx
+    restart: unless-stopped
+    networks:
+      - lead_net
+    ports:
+      - "80:80"
+      # - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      lead-scoring-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1",
+             "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

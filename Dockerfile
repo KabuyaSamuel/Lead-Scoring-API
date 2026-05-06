@@ -15,9 +15,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy source and train model
-COPY train_model.py .
-RUN python train_model.py
+# Copy training script and train model
+COPY scripts/train_model.py ./scripts/train_model.py
+RUN python scripts/train_model.py
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -35,8 +35,8 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY --from=builder /app/lead_model.pkl .
 
-# Copy app source
-COPY main.py .
+# Copy app package
+COPY app/ ./app/
 
 # Set environment defaults (override at runtime)
 ENV PORT=8000 \
@@ -50,7 +50,7 @@ USER appuser
 EXPOSE $PORT
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')"
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
