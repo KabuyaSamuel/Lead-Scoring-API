@@ -38,10 +38,8 @@ COPY --from=builder /app/lead_model.pkl .
 # Copy app package
 COPY app/ ./app/
 
-# Set environment defaults (override at runtime)
-ENV PORT=8000 \
-    API_KEYS=dev-key-12345 \
-    PYTHONUNBUFFERED=1 \
+# Set only safe defaults (no secrets)
+ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 # Switch to non-root user
@@ -53,4 +51,5 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')"
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# Start app (important for Render + local)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

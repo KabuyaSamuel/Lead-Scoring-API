@@ -27,8 +27,8 @@ services:
     volumes:
       - api_logs:/app/logs
     environment:
-      PORT:     ${PORT:-8000}
-      API_KEYS: ${API_KEYS:-dev-key-12345}
+      PORT: ${PORT}
+      API_KEYS: ${API_KEYS}
     env_file:
       - .env
     healthcheck:
