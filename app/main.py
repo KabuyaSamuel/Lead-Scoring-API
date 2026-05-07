@@ -29,6 +29,8 @@ from pydantic import BaseModel, Field, field_validator, EmailStr
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from dotenv import load_dotenv
+load_dotenv()
 
 # ── Logging Setup ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -42,15 +44,37 @@ logger = logging.getLogger("lead_scoring_api")
 limiter = Limiter(key_func=get_remote_address)
 
 # ── API Key Auth ──────────────────────────────────────────────────────────────
+from fastapi import Depends, HTTPException
+from fastapi.security import APIKeyHeader
+import os
+
 API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
-VALID_API_KEYS = set(
-    k.strip() for k in os.getenv("API_KEYS", "dev-key-12345").split(",")
-)
+
+def load_api_keys() -> set:
+    api_keys_env = os.getenv("API_KEYS")
+
+    if not api_keys_env:
+        raise RuntimeError("API_KEYS environment variable is not set")
+
+    keys = {k.strip() for k in api_keys_env.split(",") if k.strip()}
+
+    if not keys:
+        raise RuntimeError("API_KEYS is empty after parsing")
+
+    return keys
+
+VALID_API_KEYS = load_api_keys()
+
 
 def verify_api_key(api_key: str = Depends(API_KEY_HEADER)):
+    if not api_key:
+        logger.warning("Unauthorized request: missing API key")
+        raise HTTPException(status_code=401, detail="Missing API key")
+
     if api_key not in VALID_API_KEYS:
-        logger.warning(f"Unauthorized request with key: {api_key}")
-        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
+        logger.warning(f"Unauthorized request with invalid key: {api_key}")
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
     return api_key
 
 
