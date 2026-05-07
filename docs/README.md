@@ -71,20 +71,42 @@ Gmail Outreach
 
 ```text
 lead_scoring_api/
-├── main.py
-├── train_model.py
-├── test_leads.py
-├── lead_model.pkl
+├── app/
+│   ├── __init__.py
+│   └── main.py                # FastAPI application
+│
+├── scripts/
+│   └── train_model.py         # ML model training script
+│
+├── docs/
+│   └── README.md              # Additional documentation
+│
+├── nginx/
+│   └── default.conf           # Optional nginx config
+│
+├── tests/                     # Future API and workflow tests
+│
+├── lead_model.pkl             # Trained ML model
 ├── requirements.txt
 ├── build.sh
 ├── Dockerfile
 ├── docker-compose.yml
-├── n8n_workflow.json
-├── .gitignore
 └── README.md
 ```
 
 ---
+
+# Project Organization
+
+I separated the project into logical layers to make it easier to maintain and extend later.
+
+- `app/` contains the FastAPI application
+- `scripts/` contains utility and ML training scripts
+- `docs/` stores additional documentation
+- `tests/` is reserved for future automated tests
+- `nginx/` contains reverse proxy configuration for future deployment setups
+
+I wanted the structure to stay scalable as the project grows beyond a single API file.
 
 # Why I Built This
 
@@ -205,7 +227,7 @@ pip install -r requirements.txt
 ## 4. Train the Model
 
 ```bash
-python train_model.py
+python scripts/train_model.py
 ```
 
 Expected output:
@@ -220,14 +242,14 @@ This generates:
 lead_model.pkl
 ```
 
-which is the saved trained model used by the API.
+This serialized model file is loaded by the FastAPI application during startup and used for lead classification.
 
 ---
 
 ## 5. Run the API Locally
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
 Open:
@@ -463,7 +485,7 @@ Connect your GitHub repository.
 | ------------- | ---------------------------------------------- |
 | Runtime       | Python 3                                       |
 | Build Command | `bash build.sh`                                |
-| Start Command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 
 ---
 
@@ -541,7 +563,7 @@ Planned improvements include:
 
 | Problem                  | Fix                                       |
 | ------------------------ | ----------------------------------------- |
-| `lead_model.pkl` missing | Run `python train_model.py`               |
+| `lead_model.pkl` missing | Run `python scripts/train_model.py`               |
 | Webhook 404              | Click "Execute Workflow" in n8n test mode |
 | API connection failed    | Verify Render deployment URL              |
 | Gmail errors             | Reconnect Gmail OAuth                     |
