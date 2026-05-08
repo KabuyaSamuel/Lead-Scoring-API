@@ -32,7 +32,7 @@
             },
             {
               "name": "X-API-Key",
-              "value": "{LEAD_SCORING_API_KEY}"
+              "value": "{{$env.LEAD_SCORING_API_KEY}}"
             }
           ]
         },
