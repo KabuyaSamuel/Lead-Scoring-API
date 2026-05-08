@@ -1,0 +1,807 @@
+{
+  "name": "AI Lead Qualification & CRM Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a6a6b7bf-d86e-43dd-a535-c2e4a8d9b71c",
+      "name": "Lead Intake Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -48
+      ],
+      "webhookId": "43ad692e-0de0-4ffb-8d1c-8271bfd60c9d",
+      "notes": "Receives raw lead JSON from any source (form, CRM, manual test)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://lead-scoring-api-5pzz.onrender.com/score-lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "{LEAD_SCORING_API_KEY}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.body.name }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "name": "company",
+              "value": "={{ $json.body.company }}"
+            },
+            {
+              "name": "job_title",
+              "value": "={{ $json.body.job_title }}"
+            },
+            {
+              "name": "industry",
+              "value": "={{ $json.body.industry }}"
+            },
+            {
+              "name": "company_size",
+              "value": "={{ $json.body.company_size }}"
+            },
+            {
+              "name": "budget_flag",
+              "value": "={{ $json.body.budget_flag }}"
+            },
+            {
+              "name": "timeline",
+              "value": "={{ $json.body.timeline }}"
+            },
+            {
+              "name": "pain_points",
+              "value": "={{ $json.body.pain_points }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.body.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e56dbd0f-179c-4285-bb97-6917b6933272",
+      "name": "Score Lead (Python API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -672,
+        -48
+      ],
+      "notes": "Calls your Render-hosted FastAPI. Returns score, tier, routing_action."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.tier }}",
+              "value2": "hot"
+            }
+          ]
+        }
+      },
+      "id": "f40d342c-b324-49ff-8403-bebf13976252",
+      "name": "Is Hot Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -256
+      ],
+      "notes": "Routes hot leads to immediate outreach path"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.tier }}",
+              "value2": "warm"
+            }
+          ]
+        }
+      },
+      "id": "e9078144-0047-41dd-85e2-1738facb4860",
+      "name": "Is Warm Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        144
+      ],
+      "notes": "Routes warm leads to nurture path"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appLpn2FRcKSBfWf2",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualification CRM",
+          "cachedResultUrl": "https://airtable.com/appLpn2FRcKSBfWf2"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbltfxlkpgCokrSeL",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://airtable.com/appLpn2FRcKSBfWf2/tbltfxlkpgCokrSeL"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead Score": "={{ $json.score }}",
+            "Confidence": 0,
+            "Name": "={{ $json.name }}",
+            "Company": "={{ $json.company }}",
+            "Email": "={{ $json.email }}",
+            "Job Title": "={{ $json.job_title }}",
+            "Industry": "={{ $json.industry }}",
+            "Tier": "={{$json.tier.charAt(0).toUpperCase() + $json.tier.slice(1)}}",
+            "Status": "New",
+            "Routing Action": "={{ $json.routing_action }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Hot",
+                  "value": "Hot"
+                },
+                {
+                  "name": "Warm",
+                  "value": "Warm"
+                },
+                {
+                  "name": "Cold",
+                  "value": "Cold"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Routing Action",
+              "displayName": "Routing Action",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Subject",
+              "displayName": "Email Subject",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Draft",
+              "displayName": "Email Draft",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Contacted",
+                  "value": "Contacted"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Disqualified",
+                  "value": "Disqualified"
+                },
+                {
+                  "name": "Outreach Sent",
+                  "value": "Outreach Sent"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "35975442-a8c6-4a79-9e84-eea5f9ef6017",
+      "name": "Log to Airtable CRM",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "6rCIPyjseuUShPrz",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "All leads (hot/warm/cold) are logged here first"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "f825fd0e-0b56-4f6d-b32e-a0f670b75e0c",
+      "name": "Generate Email (OpenAI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -64
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1mStsR4mXIDivKcS",
+          "name": "n8n free OpenAI API credits"
+        }
+      },
+      "notes": "Generates personalized email for hot and warm leads only"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the OpenAI response and extract subject + body\nconst raw = $input.item.json.message.content;\n\nlet subject = '';\nlet body = '';\n\ntry {\n  // Attempt clean JSON parse\n  const cleaned = raw.replace(/```json|```/g, '').trim();\n  const parsed = JSON.parse(cleaned);\n  subject = parsed.subject || 'Following up';\n  body = parsed.body || raw;\n} catch(e) {\n  // Fallback: extract from text\n  const subjectMatch = raw.match(/subject[:\\s]+(.+)/i);\n  subject = subjectMatch ? subjectMatch[1].trim() : 'Quick question for you';\n  body = raw;\n}\n\nreturn [{ json: { subject, body } }];"
+      },
+      "id": "33759bf8-d844-47a9-8d94-6e28a9762b3f",
+      "name": "Parse Email JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -64
+      ],
+      "notes": "Safely parses OpenAI JSON response into subject + body fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Score Lead (Python API)').item.json.email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "a42854b6-c2b2-4794-9f84-7ddcec10740d",
+      "name": "Send Email (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -64
+      ],
+      "webhookId": "bf41f84f-6ee7-42a9-903b-640c29589ac4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "T71vPXXgi90OpIEP",
+          "name": "Gmail OAuth2 API"
+        }
+      },
+      "notes": "Sends the AI-generated email. Requires Gmail OAuth in n8n credentials."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appLpn2FRcKSBfWf2",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualification CRM",
+          "cachedResultUrl": "https://airtable.com/appLpn2FRcKSBfWf2"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbltfxlkpgCokrSeL",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://airtable.com/appLpn2FRcKSBfWf2/tbltfxlkpgCokrSeL"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead Score": 0,
+            "Confidence": 0,
+            "id": "={{ $('Log to Airtable CRM').item.json.id }}",
+            "Email Subject": "={{ $('Parse Email JSON').item.json.subject }}",
+            "Email Draft": "={{ $('Parse Email JSON').item.json.body }}",
+            "Status": "Contacted"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Hot",
+                  "value": "Hot"
+                },
+                {
+                  "name": "Warm",
+                  "value": "Warm"
+                },
+                {
+                  "name": "Cold",
+                  "value": "Cold"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Routing Action",
+              "displayName": "Routing Action",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Subject",
+              "displayName": "Email Subject",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Draft",
+              "displayName": "Email Draft",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Contacted",
+                  "value": "Contacted"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Disqualified",
+                  "value": "Disqualified"
+                },
+                {
+                  "name": "Outreach Sent",
+                  "value": "Outreach Sent"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "97e0f652-d4c7-4278-8b99-cc9630b20ec7",
+      "name": "Update Airtable Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        752,
+        -64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "6rCIPyjseuUShPrz",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "Writes the email draft back to the Airtable record for review"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'success', lead: $('Score Lead (Python API)').item.json.name, tier: $('Score Lead (Python API)').item.json.tier, score: $('Score Lead (Python API)').item.json.score }) }}",
+        "options": {}
+      },
+      "id": "6a94d786-e60c-45c1-af4a-834697e36df4",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        960,
+        64
+      ],
+      "notes": "Returns confirmation JSON to the webhook caller"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead Intake Webhook": {
+      "main": [
+        [
+          {
+            "node": "Score Lead (Python API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Lead (Python API)": {
+      "main": [
+        [
+          {
+            "node": "Is Hot Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Hot Lead?": {
+      "main": [
+        [
+          {
+            "node": "Log to Airtable CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Warm Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Warm Lead?": {
+      "main": [
+        [
+          {
+            "node": "Log to Airtable CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log to Airtable CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Airtable CRM": {
+      "main": [
+        [
+          {
+            "node": "Generate Email (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Parse Email JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Airtable Record": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "79f40c1f-928b-4a62-a0e9-0b733ebea7d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "59a26a1fee1135b5db9b58f71425f678be2b49f20df34fa4fce4a366ba2f3aea"
+  },
+  "id": "56ipXQw8kytxZNVE",
+  "tags": []
+}
