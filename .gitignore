@@ -1,8 +1,23 @@
-.env
-*.pkl
+# Python cache
 __pycache__/
 *.pyc
+
+# Virtual environment (IMPORTANT)
 venv/
-.venv/
-*.egg-info/
+
+# Environment variables (secrets)
+.env
+
+# Model artifacts (optional if you don't want to commit them)
+lead_model.pkl
+
+# Logs
+*.log
+logs/
+
+# OS files
 .DS_Store
+
+# IDE files
+.vscode/
+.idea/
