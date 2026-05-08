@@ -290,13 +290,25 @@ def root():
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 def health():
-    return HealthResponse(
-        status        = "ok" if registry.is_ready() else "degraded",
-        model_loaded  = registry.is_ready(),
-        model_version = registry.version,
-        loaded_at     = registry.loaded_at,
-        uptime_info   = f"Serving since {registry.loaded_at}"
-    )
+    try:
+        ready = registry.is_ready()
+        
+        return HealthResponse(
+            status="ok" if ready else "degraded",
+            model_loaded=ready,
+            model_version=getattr(registry, "version", "unknown"),
+            loaded_at=getattr(registry, "loaded_at", None),
+            uptime_info=f"Serving since {getattr(registry, 'loaded_at', 'unknown')}"
+        )
+
+    except Exception as e:
+        return HealthResponse(
+            status="degraded",
+            model_loaded=False,
+            model_version="unknown",
+            loaded_at=None,
+            uptime_info=f"Health check error: {str(e)}"
+        )
 
 
 @app.get("/metrics", response_model=MetricsResponse, tags=["System"],
